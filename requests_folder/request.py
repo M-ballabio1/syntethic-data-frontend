@@ -54,7 +54,7 @@ def inference_tvae(API_KEY, server_url, unique_id, num_rows):
         if response.status_code == 200:
             return response, response.status_code
         else:
-            return []
+            return None, response.status_code
     
 
 def get_models(get_models_method):

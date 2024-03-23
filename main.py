@@ -28,7 +28,7 @@ from visual.visualization import compare_vis
 try:
     endopoint = os.environ['URL']
 except KeyError:
-    endopoint = "http://127.0.0.1:8000"
+    endopoint = "https://syntethic-data-backend-gxk724njya-ew.a.run.app"
 
 get_models_method = endopoint+"/get_models"
 training_ctgan_method = endopoint+"/training_model_ctgan"
