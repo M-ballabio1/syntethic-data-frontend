@@ -12,6 +12,7 @@ import plotly.graph_objects as go
 import requests
 from requests_toolbelt.multipart.encoder import MultipartEncoder
 import json
+import os
 from io import StringIO
 import tempfile
 
@@ -22,14 +23,19 @@ from requests_folder.request import process_train_ctgan, get_models, inference_t
 from visual.visualization import compare_vis
 
 # interact with FastAPI endpoint
-endopoint = "http://127.0.0.1:8000"
+
+# Recupera la chiave API dalle variabili d'ambiente
+try:
+    endopoint = os.environ['URL']
+except KeyError:
+    endopoint = "http://127.0.0.1:8000"
+
 get_models_method = endopoint+"/get_models"
 training_ctgan_method = endopoint+"/training_model_ctgan"
 training_tvae_method = endopoint+"/train_model_tvae_adults_dataset"
 inference_ctgan_url = endopoint+"/inference_ctgan_metrics"
 inference_tvae_url = endopoint+"/inference_tvae"
 #backend = "https://api-ultrasound-classificator-cloud-run-pa6vji5wfa-ew.a.run.app/classification"
-
 
 #open images
 img_icon = Image.open('img/sdv2.png')
