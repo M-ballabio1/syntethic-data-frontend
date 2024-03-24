@@ -81,10 +81,3 @@ def get_models(get_models_method):
         return response.json()["models"]
     else:
         return []
-
-def get_models_direct(get_models_method):
-    response = requests.get(get_models_method)
-    if response.status_code == 200:
-        return response.json()["models"]
-    else:
-        return []
