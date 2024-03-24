@@ -6,12 +6,13 @@ import streamlit as st
 def process_train_ctgan(file, server_url, API_KEY, epochs):
     # Leggi il contenuto del file
     file_content = file.read()
+    filename = file.name
     
     # Costruisci il payload della richiesta
     m = MultipartEncoder(
         fields={
             "epochs": str(epochs),
-            "file_training_data": ("filename", file_content, "text/csv"),
+            "file_training_data": (filename, file_content, "text/csv"),
             "api_key": API_KEY
         }
     )
@@ -73,8 +74,15 @@ def inference_tvae(API_KEY, server_url, unique_id, num_rows):
         else:
             return None, response.status_code
     
-@st.cache_data
+@st.cache_data()
 def get_models(get_models_method):
+    response = requests.get(get_models_method)
+    if response.status_code == 200:
+        return response.json()["models"]
+    else:
+        return []
+
+def get_models_direct(get_models_method):
     response = requests.get(get_models_method)
     if response.status_code == 200:
         return response.json()["models"]

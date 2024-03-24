@@ -116,3 +116,20 @@ def show_results(real_data, synthetic_data):
     st.write("T-Test Results:")
     st.table(t_test_results_df)
     return "ok"
+
+def sistemazione_modelli(models):
+    # Lista per memorizzare le informazioni sui modelli
+    model_info = []
+    for model in models:
+        split = model.split("_")
+        
+        type_model = split[0]
+        id_model = split[2]
+        epochs = split[3]
+        training_data = split[4]
+        tr = int(training_data.split(".")[0])
+        extension = str(training_data.split(".")[1])
+
+        # Aggiungi una tupla contenente le informazioni del modello alla lista
+        model_info.append((type_model, extension, id_model, epochs, tr))
+    return model_info

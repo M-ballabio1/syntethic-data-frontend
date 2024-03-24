@@ -19,8 +19,8 @@ import tempfile
 from sdv.datasets.demo import download_demo
 from sdv.metadata import SingleTableMetadata
 
-from requests_folder.request import process_train_ctgan, process_inference_ctgan, get_models, inference_tvae, process_train_tvae
-from visual.visualization import compare_vis
+from requests_folder.request import process_train_ctgan, process_inference_ctgan, get_models, get_models_direct, inference_tvae, process_train_tvae
+from visual.visualization import compare_vis, sistemazione_modelli
 
 # interact with FastAPI endpoint
 
@@ -33,9 +33,8 @@ except KeyError:
 get_models_method = endopoint+"/get_models"
 training_ctgan_method = endopoint+"/training_model_ctgan"
 training_tvae_method = endopoint+"/train_model_tvae_adults_dataset"
-inference_ctgan_url = endopoint+"/inference_ctgan_metrics"
-inference_tvae_url = endopoint+"/inference_tvae"
-#backend = "https://api-ultrasound-classificator-cloud-run-pa6vji5wfa-ew.a.run.app/classification"
+inference_ctgan_tvae_url = endopoint+"/inference_ctgan_tvae_metrics"
+inference_tvae_url = endopoint+"/inference_tvae_gpu"
 
 #open images
 img_icon = Image.open('img/sdv2.png')
@@ -63,7 +62,7 @@ with st.sidebar:
     """
     Questa è una webapp che consente di interagire con l'api sulla cloud run.
     
-    API URL: https://api-ultrasound-classificator-cloud-run-pa6vji5wfa-ew.a.run.app/
+    API URL: https://syntethic-data-backend-gxk724njya-ew.a.run.app/
 
     Per eventuali problemi nell'utilizzo app rivolgersi a: matteoballabio99@gmail.com
     """)
@@ -109,38 +108,51 @@ if selected=="Predictor":
     
 
     st.subheader("Syntethic data generator model ")
-    st.write("In this section is possible to train the models with CT-GAN or T-VAE. Then, it's possible to test the model and obtain the metrics between real and sytethic data.")
 
     main_choice = st.selectbox("Do you want to train your new models or use an existing one to generate data?", ["Training", "Evaluation"])
 
     ### Evaluation section
     if main_choice=="Evaluation":
 
-        # Ottieni i modelli utilizzando la cache
-        models = get_models(get_models_method)
+        col1, col2 = st.columns([3, 1])
 
-        # Lista per memorizzare le informazioni sui modelli
-        model_info = []
-        for model in models:
-            split = model.split("_")
+        # Funzione di aggiornamento dei dati
+        def refresh_data(new_data):
+            # Ottieni i nuovi dati
+            models = get_models(get_models_method)
+            model_info = sistemazione_modelli(models)
+            # Aggiorna il DataFrame con i nuovi dati
+            new_df_models = pd.DataFrame(model_info, columns=["Model Type", "Extension file", "Model ID", "Epochs", "Training Data"])
+            # Se i dati sono cambiati, aggiorna il DataFrame mostrato
+            if not new_df_models.equals(df_models):
+                df_models = new_df_models
+                st.experimental_rerun()
+
+        with col1:
+            # Ottieni i modelli utilizzando la cache
+            models = get_models(get_models_method)
+            model_info = sistemazione_modelli(models)
             
-            type_model = split[0]
-            id_model = split[2]
-            epochs = split[3]
-            training_data = split[4]
-            tr = int(training_data.split(".")[0])
+            # Creazione del DataFrame
+            df_models = pd.DataFrame(model_info, columns=["Model Type", "Extension file", "Model ID", "Epochs", "Training Data"])
+            # Mostra il DataFrame come editor dati e assegna la funzione di refresh al suo cambio
+            st.data_editor(df_models, on_change=refresh_data, width=1100)
 
-            # Aggiungi una tupla contenente le informazioni del modello alla lista
-            model_info.append((type_model, id_model, epochs, tr))
+        with col2:
+            st.info("If you trained a model, after 2/3 minutes max, you should see in the table. Otherwise, click this button to refresh!")
+            refresh_button = st.button("Push to retrieve changes in data 🔥")
+            if refresh_button:
+                models = get_models_direct(get_models_method)
+                model_info = sistemazione_modelli(models)
 
-        # Creazione del DataFrame
-        df_models = pd.DataFrame(model_info, columns=["Model Type", "Model ID", "Epochs", "Training Data"])
-        st.table(df_models)
+        st.markdown("""<hr style="height:3px;border:none;color:#027953;background-color:#2FA27D;" /> """, unsafe_allow_html=True)
 
-        choice = st.selectbox("Select your model",["CT-GAN", "T-VAE"])
+        choice = st.selectbox("Select your model",["CT-GAN and T-VAE", "T-VAE"])
+        st.info("You can use the 'CT-GAN and T-VAE' section for inference of all models (ctgan or tvae). Instead, the other section works with the accelerator of CUDA and so works only in locally with gpu.")
 
         if choice == "T-VAE":
-
+            
+            st.write("In this section, you can load only PKL files and don't works in cloud without GPU")
             unique_id = st.text_input("Insert ID of model to use")
 
             # Parametri da inserire nella richiesta
@@ -184,20 +196,20 @@ if selected=="Predictor":
                     else:
                         st.error("Ops, Qualcosa è andato storto")
 
-        elif choice == "CT-GAN":
+        elif choice == "CT-GAN and T-VAE":
             
-            st.subheader("You can load only ct-gan model")
+            st.write("In this section, you can load only PyTorch (.pt) files")
             unique_id = st.text_input("Insert ID of model to use")
 
             # Parametri da inserire nella richiesta
             num_rows = st.number_input("Number of data to generate", value=200, min_value=50, max_value=2000)
 
-            if st.button("Testing CT-GAN and create new data"):
+            if st.button("Testing CT-GAN and T-VAE and create new data"):
                 if unique_id and num_rows is not None:
                     # Visualizza l'API Key inserita dall'utente
                     st.write("API Key:", api_key)
 
-                    response, status_code = process_inference_ctgan(inference_ctgan_url, api_key, unique_id, num_rows)
+                    response, status_code = process_inference_ctgan(inference_ctgan_tvae_url, api_key, unique_id, num_rows)
 
                     if status_code==200:
                         st.success("Ecco i risultati!")
@@ -240,7 +252,7 @@ if selected=="Predictor":
         if choice == "CT-GAN":
 
             # Caricamento dei file di training
-            file_training_data = st.file_uploader('Insert data for training', type=['csv'])
+            file_training_data = st.file_uploader('Insert data for training', type=['csv', 'xlsx'])
 
             # Parametri da inserire nella richiesta
             epochs = st.number_input("Number of epochs", value=3, min_value=1, max_value=10)
@@ -261,7 +273,7 @@ if selected=="Predictor":
                         message = response_json.get('message')
                         st.success(f"Starting {message} with code: {unique_id}")
                     else:
-                        st.error(f"Error: {response.status_code}")
+                        st.error(f"Error: {response.status_code} - Please upload a file first and set API KEY")
                 else:
                     st.warning("Please upload a file first and set API KEY")
 
