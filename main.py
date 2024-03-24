@@ -19,7 +19,7 @@ import tempfile
 from sdv.datasets.demo import download_demo
 from sdv.metadata import SingleTableMetadata
 
-from requests_folder.request import process_train_ctgan, process_inference_ctgan, get_models, get_models_direct, inference_tvae, process_train_tvae
+from requests_folder.request import process_train_ctgan, process_inference_ctgan, get_models, inference_tvae, process_train_tvae
 from visual.visualization import compare_vis, sistemazione_modelli
 
 # interact with FastAPI endpoint
@@ -142,7 +142,7 @@ if selected=="Predictor":
             st.info("If you trained a model, after 2/3 minutes max, you should see in the table. Otherwise, click this button to refresh!")
             refresh_button = st.button("Push to retrieve changes in data 🔥")
             if refresh_button:
-                models = get_models_direct(get_models_method)
+                models = get_models(get_models_method)
                 model_info = sistemazione_modelli(models)
 
         st.markdown("""<hr style="height:3px;border:none;color:#027953;background-color:#2FA27D;" /> """, unsafe_allow_html=True)
