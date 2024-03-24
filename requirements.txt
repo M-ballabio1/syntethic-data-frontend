@@ -17,3 +17,4 @@ ujson==5.7.0
 zipp==3.15.0
 plotly==5.20.0
 sdv==1.11.0
+fastapi==0.109.2

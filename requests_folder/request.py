@@ -25,6 +25,23 @@ def process_train_ctgan(file, server_url, API_KEY, epochs):
     )
     return response
 
+def process_inference_ctgan(server_url, API_KEY, model_id, sample_num):
+    
+    sample_num = int(sample_num)
+
+    #attesa
+    with st.spinner("Calling API..."):
+        # Fai la chiamata POST
+        response = requests.post(
+            server_url,
+            params={"model_id": model_id, "sample_num": sample_num, "api_key": API_KEY}
+        )
+        if response.status_code == 200:
+            return response, response.status_code
+        else:
+            return None, response.status_code
+    
+
 def process_train_tvae(server_url, API_KEY, epochs):
     # Costruisci il payload della richiesta
 
@@ -56,7 +73,7 @@ def inference_tvae(API_KEY, server_url, unique_id, num_rows):
         else:
             return None, response.status_code
     
-
+@st.cache_data
 def get_models(get_models_method):
     response = requests.get(get_models_method)
     if response.status_code == 200:

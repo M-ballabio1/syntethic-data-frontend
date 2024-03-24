@@ -19,7 +19,7 @@ import tempfile
 from sdv.datasets.demo import download_demo
 from sdv.metadata import SingleTableMetadata
 
-from requests_folder.request import process_train_ctgan, get_models, inference_tvae, process_train_tvae
+from requests_folder.request import process_train_ctgan, process_inference_ctgan, get_models, inference_tvae, process_train_tvae
 from visual.visualization import compare_vis
 
 # interact with FastAPI endpoint
@@ -28,7 +28,7 @@ from visual.visualization import compare_vis
 try:
     endopoint = os.environ['URL']
 except KeyError:
-    endopoint = "https://syntethic-data-backend-gxk724njya-ew.a.run.app"
+    endopoint = "http://127.0.0.1:8000"
 
 get_models_method = endopoint+"/get_models"
 training_ctgan_method = endopoint+"/training_model_ctgan"
@@ -183,6 +183,54 @@ if selected=="Predictor":
 
                     else:
                         st.error("Ops, Qualcosa è andato storto")
+
+        elif choice == "CT-GAN":
+            
+            st.subheader("You can load only ct-gan model")
+            unique_id = st.text_input("Insert ID of model to use")
+
+            # Parametri da inserire nella richiesta
+            num_rows = st.number_input("Number of data to generate", value=200, min_value=50, max_value=2000)
+
+            if st.button("Testing CT-GAN and create new data"):
+                if unique_id and num_rows is not None:
+                    # Visualizza l'API Key inserita dall'utente
+                    st.write("API Key:", api_key)
+
+                    response, status_code = process_inference_ctgan(inference_ctgan_url, api_key, unique_id, num_rows)
+
+                    if status_code==200:
+                        st.success("Ecco i risultati!")
+
+                        # Leggi i dati sintetici dalla risposta
+                        synthetic_data = pd.read_csv(StringIO(response.content.decode('utf-8')))
+                        
+                        # Salva i dati sintetici in un file CSV temporaneo
+                        with tempfile.NamedTemporaryFile(delete=False, suffix=".csv") as tmp_file:
+                            synthetic_data.to_csv(tmp_file, index=False)
+                            tmp_file_path = tmp_file.name
+                        
+                        # Crea un pulsante di download per il file
+                        st.download_button(
+                            label="Download Synthetic Data CSV",
+                            data=open(tmp_file_path, 'rb'),
+                            file_name="synthetic_data.csv",
+                            mime="text/csv"
+                        )
+                    
+                        # genearate dashboard
+                        metadata = SingleTableMetadata()
+
+                        # Scarica il dataset di esempio
+                        real_data, metadata = download_demo(modality='single_table', dataset_name='adult')
+
+                        #plotly
+                        compare_vis(real_data, synthetic_data)
+
+                    else:
+                        st.error("Ops, Qualcosa è andato storto")
+
+
 
     ### Training section
     elif main_choice=="Training":
