@@ -3,6 +3,13 @@ from requests_toolbelt.multipart.encoder import MultipartEncoder
 import json
 import streamlit as st
 
+def get_transactions(get_transaction_method):
+    response = requests.get(get_transaction_method)
+    if response.status_code == 200:
+        return response, response.status_code
+    else:
+        return None, response.status_code
+
 def process_train_ctgan(file, server_url, API_KEY, epochs):
     # Leggi il contenuto del file
     file_content = file.read()
