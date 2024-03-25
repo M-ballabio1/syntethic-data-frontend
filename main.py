@@ -31,8 +31,7 @@ from visual.visualization import compare_vis, sistemazione_modelli
 try:
     endopoint = os.environ['URL']
 except KeyError:
-    endopoint = "https://syntethic-data-backend-gxk724njya-ew.a.run.app"
-    #endopoint = "http://127.0.0.1:8000"
+    endopoint = "http://127.0.0.1:8000"
 
 get_models_method = endopoint+"/get_models"
 get_transaction_method = endopoint+"/transactions"
