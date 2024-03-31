@@ -269,7 +269,7 @@ if selected=="Predictor":
             file_training_data = st.file_uploader('Insert data for training', type=['csv', 'xlsx'])
 
             # Parametri da inserire nella richiesta
-            epochs = st.number_input("Number of epochs", value=3, min_value=1, max_value=10)
+            epochs = st.number_input("Number of epochs", value=3, min_value=1, max_value=30)
 
             # Invio della richiesta al server
             if st.button("Train CTGAN"):
