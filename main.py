@@ -129,36 +129,23 @@ if selected=="Predictor":
     ### Evaluation section
     if main_choice=="Evaluation":
 
-        col1, col2 = st.columns([3, 1])
-
-        # Funzione di aggiornamento dei dati
-        def refresh_data(new_data):
-            # Ottieni i nuovi dati
-            models = get_models(get_models_method)
-            model_info = sistemazione_modelli(models)
-            # Aggiorna il DataFrame con i nuovi dati
-            new_df_models = pd.DataFrame(model_info, columns=["Model Type", "Extension file", "Model ID", "Epochs", "Training Data"])
-            # Se i dati sono cambiati, aggiorna il DataFrame mostrato
-            if not new_df_models.equals(df_models):
-                df_models = new_df_models
-                st.experimental_rerun()
+        col1, col2 = st.columns([3, 1.5])
 
         with col1:
-            # Ottieni i modelli utilizzando la cache
-            models = get_models(get_models_method)
-            model_info = sistemazione_modelli(models)
+            butt_model_list = st.button("Show the available trained model 🔥")
+            if butt_model_list:
+                # Ottieni i modelli utilizzando la cache
+                models = get_models(get_models_method)
+                model_info = sistemazione_modelli(models)
             
-            # Creazione del DataFrame
-            df_models = pd.DataFrame(model_info, columns=["Model Type", "Extension file", "Model ID", "Epochs", "Training Data"])
-            # Mostra il DataFrame come editor dati e assegna la funzione di refresh al suo cambio
-            st.data_editor(df_models, on_change=refresh_data, width=1100)
+                # Creazione del DataFrame
+                df_models = pd.DataFrame(model_info, columns=["Model Type", "Extension file", "Model ID", "Epochs", "Training Data"])
+                # Mostra il DataFrame come editor dati e assegna la funzione di refresh al suo cambio
+                st.data_editor(df_models, width=1200)
 
         with col2:
             st.info("If you trained a model, after 2/3 minutes max, you should see in the table. Otherwise, click this button to refresh!")
-            refresh_button = st.button("Push to retrieve changes in data 🔥")
-            if refresh_button:
-                models = get_models(get_models_method)
-                model_info = sistemazione_modelli(models)
+
 
         st.markdown("""<hr style="height:3px;border:none;color:#027953;background-color:#2FA27D;" /> """, unsafe_allow_html=True)
 
