@@ -2,6 +2,17 @@ import requests
 from requests_toolbelt.multipart.encoder import MultipartEncoder
 import json
 import streamlit as st
+from supabase import Client
+import os
+
+# Initialize Supabase client
+supabase_url = os.environ.get("SUPABASE_URL")
+supabase_key = os.environ.get("SUPABASE_KEY")
+
+supabase = Client( 
+	supabase_url = supabase_url,
+    supabase_key = supabase_key
+)
 
 def get_transactions(get_transaction_method):
     response = requests.get(get_transaction_method)
@@ -87,3 +98,16 @@ def get_models(get_models_method):
         return response.json()["models"]
     else:
         return []
+
+def update_transaction_length(model_id: str, length_request_time: int):
+    # Cerca la riga corrispondente utilizzando il model_id
+    response = supabase.table('transactions').select('*').eq('model_id', model_id).execute()
+    data = response.data
+    print(data)
+    if data:  # Se esiste una riga corrispondente
+        transaction_id = data[0]['model_id']  # Supponendo che 'id' sia il nome della colonna che contiene l'ID della riga
+        # Esegui l'aggiornamento della colonna length_request_time
+        update_data = {'lenght_time_request': length_request_time}
+        update_response = supabase.table('transactions').update(update_data).eq('model_id', transaction_id).execute()
+    else:
+        print("Nessuna riga trovata corrispondente al model_id:", model_id)

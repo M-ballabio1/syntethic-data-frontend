@@ -21,8 +21,9 @@ import tempfile
 
 from sdv.datasets.demo import download_demo
 from sdv.metadata import SingleTableMetadata
+from supabase import Client, create_client
 
-from requests_folder.request import process_train_ctgan, process_inference_ctgan, get_models, get_transactions, inference_tvae, process_train_tvae
+from requests_folder.request import process_train_ctgan, process_inference_ctgan, get_models, get_transactions, inference_tvae, process_train_tvae, update_transaction_length
 from visual.visualization import compare_vis, sistemazione_modelli
 
 # interact with FastAPI endpoint
@@ -43,17 +44,6 @@ inference_tvae_url = endopoint+"/inference_tvae_gpu"
 #open images
 img_icon = Image.open('img/sdv2.png')
 img_pipe = Image.open('img/mod_ctgan.png')
-
-# Verifica se il file Excel esiste già
-excel_file = 'latency_data.xlsx'
-
-if not os.path.exists(excel_file):
-    # Se il file non esiste, crea un nuovo DataFrame vuoto
-    data = {'url': [], 'Latency': []}
-    df_latency = pd.DataFrame(data)
-else:
-    # Se il file esiste, carica il DataFrame dal file Excel
-    df_latency = pd.read_excel(excel_file)
 
 #starting application
 st.set_page_config(page_title="SYN-GEN", page_icon="img/tools.svg", layout="wide")
@@ -220,8 +210,8 @@ if selected=="Predictor":
                         # Calcolo latenza
                         end_time = time.time()
                         latency = end_time - start_time
-                        df_latency = df_latency._append({'url': '/inference_ctgan_metrics', 'Latency': latency}, ignore_index=True)
-                        df_latency.to_excel(excel_file, index=False)
+                        # update colonna db
+                        update_transaction_length(model_id=unique_id, length_request_time=latency)
 
                         st.success("Ecco i risultati!")
 
@@ -281,9 +271,7 @@ if selected=="Predictor":
                     
                     # Calcolo latenza
                     end_time = time.time()
-                    latency = end_time - start_time
-                    df_latency = df_latency._append({'url': '/training_model_ctgan', 'Latency': latency}, ignore_index=True)
-                    df_latency.to_excel(excel_file, index=False)
+                    latency = float(end_time - start_time)
 
                     # Verifica della risposta
                     if response.status_code == 200:
@@ -294,6 +282,10 @@ if selected=="Predictor":
                         st.success(f"Starting {message} with code: {unique_id}")
                     else:
                         st.error(f"Error: {response.status_code} - Please upload a file first and set API KEY")
+                    
+                    time.sleep(1)
+                    # update colonna db
+                    update_transaction_length(model_id=unique_id, length_request_time=latency)
                 else:
                     st.warning("Please upload a file first and set API KEY")
 
@@ -319,8 +311,6 @@ if selected=="Predictor":
                         # Calcolo latenza
                         end_time = time.time()
                         latency = end_time - start_time
-                        df_latency = df_latency._append({'url': '/train_model_tvae_adults_dataset', 'Latency': latency}, ignore_index=True)
-                        df_latency.to_excel(excel_file, index=False)
 
                         # Verifica della risposta
                         if response.status_code == 200:
@@ -331,6 +321,10 @@ if selected=="Predictor":
                             st.success(f"Starting {message} with code: {unique_id}. Otterrai il modello utilizzabile nella sezione evaluation.")
                         else:
                             st.error(f"Error: {response.status_code}")
+                        
+                        time.sleep(1)
+                        # update colonna db
+                        update_transaction_length(model_id=unique_id, length_request_time=latency)
                     else:
                         st.warning("Please upload a file first and set API KEY")
                 except Exception as e:
@@ -352,6 +346,9 @@ elif selected=="Dashboard API analytics":
         estrazione = transactions_response.json()
         # Creazione del DataFrame
         df = pd.DataFrame(estrazione)
+        # Converti la colonna 'timestamp' in formato datetime
+        df['timestamp'] = pd.to_datetime(df['timestamp'], format='ISO8601')
+        print(df['timestamp'])
         num_tot = len(df)
 
         # Filtraggio dei dati dove status code == 200
@@ -368,7 +365,7 @@ elif selected=="Dashboard API analytics":
         perc_wrong = round((num_wrong / num_tot)*100, 3)
 
         # Calcola la media della colonna1
-        media_latency = round(df_latency['Latency'].mean(), 2)
+        media_latency = round(df['lenght_time_request'].mean(), 2)
 
     st.write("In this section, it's possible analyze the API call and discover some problems about the backend of application.")
     a, b, c, d = st.columns(4)
